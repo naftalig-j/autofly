@@ -39,3 +39,16 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t "${{ env.FLY_REGISTRY_SUBDOMAIN }}/docker/sound-transfer:${{ github.sha }}" \
+            -t "${{ env.FLY_REGISTRY_SUBDOMAIN }}/docker/sound-transfer:latest" \
+            .
+
+      - name: Push Docker image
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker push "${{ env.FLY_REGISTRY_SUBDOMAIN }}/docker/sound-transfer:${{ github.sha }}"
+          docker push "${{ env.FLY_REGISTRY_SUBDOMAIN }}/docker/sound-transfer:latest"
