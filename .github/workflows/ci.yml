@@ -39,6 +39,7 @@ jobs:
 
       - name: Build
         run: npm run build
+        # dist/ is now on the runner; the Docker step below packages it into nginx
 
       - name: Build Docker image
         run: |
