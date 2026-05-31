@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   encodeToAudioBuffer,
   buildTextPayload,
@@ -68,15 +68,12 @@ export function SendPanel() {
     if (file) handleFile(file);
   };
 
-  // Estimate size on text change
-  useEffect(() => {
-    if (mode === 'text' && text) {
-      const bytes = new TextEncoder().encode(text).length + 1; // +1 for type tag
-      setEstSec(estimateDuration(bytes));
-    } else {
-      setEstSec(null);
-    }
-  }, [mode, text]);
+  // For text mode derive the duration estimate directly during render;
+  // for file mode it is set inside transmit() after encoding.
+  const textEstSec = mode === 'text' && text
+    ? estimateDuration(new TextEncoder().encode(text).length + 1)
+    : null;
+  const displayEstSec = textEstSec ?? estSeconds;
 
   // ── Transmit ───────────────────────────────────────────────────────────────
 
@@ -247,9 +244,9 @@ export function SendPanel() {
       )}
 
       {/* Estimate */}
-      {estSeconds !== null && status !== 'transmitting' && (
+      {displayEstSec !== null && status !== 'transmitting' && (
         <p className="text-xs text-slate-500 text-center">
-          Estimated transmission time: <span className="text-slate-300 font-mono">{estSeconds.toFixed(1)} s</span>
+          Estimated transmission time: <span className="text-slate-300 font-mono">{displayEstSec!.toFixed(1)} s</span>
         </p>
       )}
 
@@ -277,7 +274,7 @@ export function SendPanel() {
           </div>
           <div className="flex justify-between text-xs text-slate-500 font-mono">
             <span>{(progress * 100).toFixed(0)}%</span>
-            {estSeconds !== null && <span>{(estSeconds * (1 - progress)).toFixed(1)} s left</span>}
+            {displayEstSec !== null && <span>{(displayEstSec * (1 - progress)).toFixed(1)} s left</span>}
           </div>
         </div>
       )}
