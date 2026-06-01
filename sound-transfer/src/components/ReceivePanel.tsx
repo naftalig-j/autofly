@@ -21,9 +21,12 @@ export function ReceivePanel() {
   const [calibPct,    setCalibPct]    = useState(0);
   const [selfTestStatus, setSelfTestStatus] = useState<'idle'|'running'|'pass'|'fail'>('idle');
   const [selfTestState,  setSelfTestState]  = useState<DecoderState>('idle');
+  const [fileDecoding,   setFileDecoding]   = useState(false);
+  const [fileError,      setFileError]      = useState('');
 
   const decoderRef    = useRef<SoundDecoder | null>(null);
   const calibTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fileInputRef  = useRef<HTMLInputElement | null>(null);
 
   // ── Cleanup: stop decoder + timers ─────────────────────────────────────────
   const cleanup = useCallback(() => {
@@ -47,6 +50,37 @@ export function ReceivePanel() {
   }, []);
 
   // ── Start ───────────────────────────────────────────────────────────────────
+  // ── Analyze audio file ─────────────────────────────────────────────────────
+  const analyzeFile = async (file: File) => {
+    setFileDecoding(true);
+    setFileError('');
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const audioCtx    = new AudioContext();
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      await audioCtx.close();
+
+      const decoder = new SoundDecoder();
+      decoder.on('done', (r: DecodeResult) => {
+        setResult(r);
+        setHistory(h => [r, ...h].slice(0, 5));
+        setFileDecoding(false);
+        decoder.stop();
+      });
+      decoder.on('error', (msg: string) => {
+        setFileError(msg);
+        setFileDecoding(false);
+        decoder.stop();
+      });
+
+      await decoder.startFromBuffer(audioBuffer);
+    } catch (e) {
+      setFileError(`Failed to read audio file: ${e instanceof Error ? e.message : String(e)}`);
+      setFileDecoding(false);
+    }
+  };
+
   const startListening = async () => {
     if (phase !== 'idle') return;      // prevent double-start
     setPhase('starting');
@@ -472,6 +506,46 @@ export function ReceivePanel() {
           ))}
         </div>
       )}
+
+      {/* ── Analyze audio file ───────────────────────────────────────────────── */}
+      <div className="border-t border-slate-700/50 pt-4 space-y-2">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Analyze Audio File</p>
+        <p className="text-xs text-slate-500">
+          Import a WAV file saved from the Send panel to decode its message offline.
+        </p>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="audio/*,.wav"
+          className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; if (f) analyzeFile(f); e.target.value = ''; }}
+        />
+
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={fileDecoding}
+          className="w-full py-2 px-4 rounded-xl text-sm font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors disabled:opacity-50 disabled:cursor-wait"
+        >
+          {fileDecoding ? '⏳ Analyzing…' : '📂 Open WAV File'}
+        </button>
+
+        {/* Drag and drop support */}
+        <div
+          onDragOver={e => e.preventDefault()}
+          onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) analyzeFile(f); }}
+          className="flex items-center justify-center border border-dashed border-slate-600 rounded-xl h-12 text-xs text-slate-500 hover:border-slate-400 hover:text-slate-400 transition-colors cursor-pointer"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          or drag &amp; drop a WAV here
+        </div>
+
+        {fileError && (
+          <p className="text-xs text-red-400 bg-red-950/30 border border-red-900/40 rounded-lg p-2">
+            {fileError}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

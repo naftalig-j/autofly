@@ -145,6 +145,68 @@ export async function buildImagePayload(
   });
 }
 
+// ─── WAV export ───────────────────────────────────────────────────────────────
+
+function writeString(view: DataView, offset: number, str: string) {
+  for (let i = 0; i < str.length; i++)
+    view.setUint8(offset + i, str.charCodeAt(i));
+}
+
+/**
+ * Resample an AudioBuffer to a lower sample rate using OfflineAudioContext.
+ * Used to shrink the exported WAV: our highest MFSK frequency is 2700 Hz so
+ * 8000 Hz is enough (Nyquist = 4000 Hz) and makes the file ~5× smaller.
+ */
+export async function resampleAudioBuffer(
+  buffer: AudioBuffer,
+  targetSampleRate: number,
+): Promise<AudioBuffer> {
+  const frames = Math.ceil(buffer.duration * targetSampleRate);
+  const ctx    = new OfflineAudioContext(1, frames, targetSampleRate);
+  const src    = ctx.createBufferSource();
+  src.buffer   = buffer;
+  src.connect(ctx.destination);
+  src.start(0);
+  return ctx.startRendering();
+}
+
+/**
+ * Encode an AudioBuffer as a 16-bit mono PCM WAV Blob.
+ * Only the first channel is used (the MFSK signal is always mono).
+ */
+export function audioBufferToWavBlob(buffer: AudioBuffer): Blob {
+  const samples    = buffer.getChannelData(0);
+  const sampleRate = buffer.sampleRate;
+  const numSamples = samples.length;
+  const dataBytes  = numSamples * 2;                  // 16-bit = 2 bytes/sample
+  const ab         = new ArrayBuffer(44 + dataBytes);
+  const view       = new DataView(ab);
+
+  // RIFF chunk
+  writeString(view,  0, 'RIFF');
+  view.setUint32(    4, 36 + dataBytes, true);
+  writeString(view,  8, 'WAVE');
+  // fmt  chunk
+  writeString(view, 12, 'fmt ');
+  view.setUint32(   16, 16,               true);  // chunk size
+  view.setUint16(   20,  1,               true);  // PCM
+  view.setUint16(   22,  1,               true);  // mono
+  view.setUint32(   24, sampleRate,       true);
+  view.setUint32(   28, sampleRate * 2,   true);  // byte rate
+  view.setUint16(   32,  2,               true);  // block align
+  view.setUint16(   34, 16,               true);  // bits per sample
+  // data chunk
+  writeString(view, 36, 'data');
+  view.setUint32(   40, dataBytes,        true);
+  // PCM samples  (float32 → int16)
+  for (let i = 0; i < numSamples; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(44 + i * 2, s * 0x7fff, true);
+  }
+
+  return new Blob([ab], { type: 'audio/wav' });
+}
+
 // Estimated transmission time in seconds
 export function estimateDuration(payloadBytes: number): number {
   const symbols =
