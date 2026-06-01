@@ -4,6 +4,7 @@ import {
   buildTextPayload,
   buildImagePayload,
   estimateDuration,
+  audioBufferToWavBlob,
 } from '../lib/encoder';
 import { MAX_PAYLOAD_BYTES } from '../lib/protocol';
 
@@ -20,6 +21,7 @@ export function SendPanel() {
   const [errorMsg,  setErrorMsg]  = useState('');
   const [estSeconds, setEstSec]   = useState<number | null>(null);
   const [dragging,  setDragging]  = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sourceRef   = useRef<AudioBufferSourceNode | null>(null);
@@ -40,6 +42,7 @@ export function SendPanel() {
     setStatus('idle');
     setProgress(0);
     setErrorMsg('');
+    setAudioBlob(null);
   };
 
   // ── File handling ──────────────────────────────────────────────────────────
@@ -102,6 +105,8 @@ export function SendPanel() {
 
       const buffer   = await encodeToAudioBuffer(payload);
       const duration = buffer.duration;
+      // Save the WAV so the user can download / share it after transmitting
+      setAudioBlob(audioBufferToWavBlob(buffer));
 
       // Close the previous context before creating a new one.  Not doing this
       // leaks AudioContexts — Chrome silently degrades after a few open ones.
@@ -293,6 +298,37 @@ export function SendPanel() {
           </button>
         )}
       </div>
+
+      {/* ── Save / Share audio file ──────────────────────────────────────────── */}
+      {audioBlob && status === 'done' && (
+        <div className="flex gap-2">
+          {/* Download as WAV */}
+          <a
+            href={URL.createObjectURL(audioBlob)}
+            download="sound-transfer.wav"
+            className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-sm font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors"
+          >
+            ⬇ Save WAV
+          </a>
+
+          {/* Share via Web Share API (WhatsApp, AirDrop, etc.) */}
+          {'share' in navigator && (
+            <button
+              onClick={async () => {
+                const file = new File([audioBlob], 'sound-transfer.wav', { type: 'audio/wav' });
+                try {
+                  await navigator.share({ files: [file], title: 'Sound Transfer audio' });
+                } catch {
+                  // user cancelled — do nothing
+                }
+              }}
+              className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-sm font-medium bg-sonic-700 hover:bg-sonic-600 text-white transition-colors"
+            >
+              ↗ Share
+            </button>
+          )}
+        </div>
+      )}
 
       {errorMsg && (
         <p className="text-xs text-red-400 bg-red-950/30 border border-red-900/40 rounded-lg p-3">

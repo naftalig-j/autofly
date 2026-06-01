@@ -172,6 +172,43 @@ export class SoundDecoder {
     this.startPollWorker();
   }
 
+  /**
+   * Decode an audio file that was previously saved with audioBufferToWavBlob().
+   * The buffer is decoded exactly like the loopback test — no microphone needed.
+   * The audio is played back silently (not through speakers) so the user isn't
+   * interrupted, and the decoder emits 'done' or 'error' as usual.
+   */
+  async startFromBuffer(buffer: AudioBuffer): Promise<void> {
+    this.reset();
+    this.audioCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
+    await this.audioCtx.resume();
+
+    const hpf = this.buildBandpass(this.audioCtx);
+    this.analyser = this.buildAnalyser(this.audioCtx);
+    this.fftData  = new Float32Array(FFT_SIZE) as Float32Array<ArrayBuffer>;
+
+    const source = this.audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(hpf.input);
+    hpf.output.connect(this.analyser);
+    // No connection to destination — silent playback, just for analysis
+
+    // Stop the decoder automatically when the audio ends (+ 500 ms grace)
+    source.onended = () => {
+      setTimeout(() => {
+        if (this.state !== 'done' && this.state !== 'idle') {
+          this.emit('error', 'Could not decode the audio file — no valid MFSK signal found.');
+          this.resetToSync();
+        }
+      }, 500);
+    };
+
+    this.noiseFloorDB = -80;
+    this.setState('detecting_sync');
+    source.start();
+    this.startPollWorker();
+  }
+
   stop() {
     this.stopped = true;
     this.stopPollWorker();
