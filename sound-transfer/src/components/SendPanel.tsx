@@ -318,9 +318,13 @@ export function SendPanel() {
           {'share' in navigator && (
             <button
               onClick={async () => {
-                const file = new File([audioBlob], 'sound-transfer.wav', { type: 'audio/wav' });
+                // Share as a generic document so WhatsApp (and other apps)
+                // treat it as a file to download rather than audio to play.
+                // audio/wav causes WhatsApp to reject or preview-only the file;
+                // application/octet-stream passes it through as a document.
+                const file = new File([audioBlob], 'sound-transfer.wav', { type: 'application/octet-stream' });
                 try {
-                  await navigator.share({ files: [file], title: 'Sound Transfer audio' });
+                  await navigator.share({ files: [file], title: 'Sound Transfer message', text: 'Open this file in the Sound Transfer app to decode the message.' });
                 } catch {
                   // user cancelled — do nothing
                 }
