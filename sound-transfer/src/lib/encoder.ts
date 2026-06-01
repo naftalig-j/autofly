@@ -153,6 +153,24 @@ function writeString(view: DataView, offset: number, str: string) {
 }
 
 /**
+ * Resample an AudioBuffer to a lower sample rate using OfflineAudioContext.
+ * Used to shrink the exported WAV: our highest MFSK frequency is 2700 Hz so
+ * 8000 Hz is enough (Nyquist = 4000 Hz) and makes the file ~5× smaller.
+ */
+export async function resampleAudioBuffer(
+  buffer: AudioBuffer,
+  targetSampleRate: number,
+): Promise<AudioBuffer> {
+  const frames = Math.ceil(buffer.duration * targetSampleRate);
+  const ctx    = new OfflineAudioContext(1, frames, targetSampleRate);
+  const src    = ctx.createBufferSource();
+  src.buffer   = buffer;
+  src.connect(ctx.destination);
+  src.start(0);
+  return ctx.startRendering();
+}
+
+/**
  * Encode an AudioBuffer as a 16-bit mono PCM WAV Blob.
  * Only the first channel is used (the MFSK signal is always mono).
  */

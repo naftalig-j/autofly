@@ -5,6 +5,7 @@ import {
   buildImagePayload,
   estimateDuration,
   audioBufferToWavBlob,
+  resampleAudioBuffer,
 } from '../lib/encoder';
 import { MAX_PAYLOAD_BYTES } from '../lib/protocol';
 
@@ -105,8 +106,10 @@ export function SendPanel() {
 
       const buffer   = await encodeToAudioBuffer(payload);
       const duration = buffer.duration;
-      // Save the WAV so the user can download / share it after transmitting
-      setAudioBlob(audioBufferToWavBlob(buffer));
+      // Downsample to 8 kHz for export — our highest MFSK tone is 2700 Hz so
+      // 8 kHz is sufficient (Nyquist = 4 kHz) and shrinks the file ~5×.
+      const exportBuffer = await resampleAudioBuffer(buffer, 8000);
+      setAudioBlob(audioBufferToWavBlob(exportBuffer));
 
       // Close the previous context before creating a new one.  Not doing this
       // leaks AudioContexts — Chrome silently degrades after a few open ones.
