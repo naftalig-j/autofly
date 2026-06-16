@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { LETTERS, type HebrewLetter } from '../data/letters';
-import { speak, speakPair } from '../utils/speech';
+import { speak } from '../utils/speech';
 import Celebration from './Celebration';
 
 interface Props {
@@ -38,10 +38,7 @@ export default function QuizMode({ onBack }: Props) {
   }, []);
 
   const sayQuestion = useCallback((letter: typeof round.target) => {
-    speakPair(
-      { hebrew: letter.ttsName,    english: letter.ttsEnglish },
-      { hebrew: letter.wordMeaning, english: letter.wordMeaning },
-    );
+    speak({ hebrew: letter.name, english: letter.ttsEnglish });
   }, []);
 
   useEffect(() => {
@@ -57,7 +54,7 @@ export default function QuizMode({ onBack }: Props) {
       setScore(s => s + 1);
       setCelebrate(true);
       speak({ hebrew: 'כל הכבוד!', english: 'Great job!' });
-      setTimeout(() => { setCelebrate(false); nextRound(); }, 1800);
+      setTimeout(() => { setCelebrate(false); nextRound(); }, 2000);
     } else {
       setShake(choice.letter);
       speak({ hebrew: 'נסי שוב', english: 'Try again' });
