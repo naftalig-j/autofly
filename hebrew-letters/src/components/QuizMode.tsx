@@ -92,9 +92,10 @@ export default function QuizMode({ onBack }: Props) {
           <p className="text-gray-500 text-lg mb-4 font-medium">מה האות?</p>
 
           {/* reveal emoji + word + letter name only after correct guess */}
-          {correct ? (
+          <div className="text-7xl mb-3">{round.target.emoji}</div>
+
+          {correct && (
             <div className="mb-4 flex flex-col items-center gap-2">
-              <div className="text-7xl">{round.target.emoji}</div>
               <div className="text-4xl font-black text-gray-800">{round.target.wordMeaning}</div>
               <div className="py-2 px-4 rounded-2xl inline-block"
                    style={{ background: round.target.color + '22' }}>
@@ -104,8 +105,6 @@ export default function QuizMode({ onBack }: Props) {
                 <span className="text-gray-400 text-base mr-2">({round.target.transliteration})</span>
               </div>
             </div>
-          ) : (
-            <div className="text-6xl mb-4">🎵</div>
           )}
 
           <button
