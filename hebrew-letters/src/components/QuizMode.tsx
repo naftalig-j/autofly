@@ -16,25 +16,47 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-function buildRound(targetIdx: number) {
-  const target = LETTERS[targetIdx];
-  const others = shuffle(LETTERS.filter((_, i) => i !== targetIdx)).slice(0, 3);
+function buildRound(target: HebrewLetter) {
+  const others = shuffle(LETTERS.filter(l => l.letter !== target.letter)).slice(0, 3);
   return { target, choices: shuffle([target, ...others]) };
+}
+
+/** Returns a freshly-shuffled queue of all 22 letters */
+function newQueue(): HebrewLetter[] {
+  return shuffle([...LETTERS]);
 }
 
 export default function QuizMode({ onBack }: Props) {
   const [score, setScore] = useState(0);
   const [total, setTotal] = useState(0);
-  const [round, setRound] = useState(() => buildRound(Math.floor(Math.random() * LETTERS.length)));
+  // queue holds letters not yet shown in this cycle
+  const [_queue, setQueue] = useState<HebrewLetter[]>(() => {
+    const q = newQueue();
+    return q.slice(1); // first letter used for initial round
+  });
+  const [round, setRound] = useState(() => {
+    const q = newQueue();
+    return buildRound(q[0]);
+  });
   const [selected, setSelected] = useState<HebrewLetter | null>(null);
   const [celebrate, setCelebrate] = useState(false);
   const [shake, setShake] = useState<string | null>(null);
+  const [cycleMsg, setCycleMsg] = useState(false);
 
   const nextRound = useCallback(() => {
     setSelected(null);
     setShake(null);
-    const newIdx = Math.floor(Math.random() * LETTERS.length);
-    setRound(buildRound(newIdx));
+    setQueue(prev => {
+      const remaining = prev.length > 0 ? prev : (() => {
+        // completed all 22 — start a new cycle
+        setCycleMsg(true);
+        setTimeout(() => setCycleMsg(false), 2500);
+        return newQueue();
+      })();
+      const [next, ...rest] = remaining;
+      setRound(buildRound(next));
+      return rest;
+    });
   }, []);
 
   const sayQuestion = useCallback((letter: typeof round.target) => {
@@ -72,6 +94,14 @@ export default function QuizMode({ onBack }: Props) {
          style={{ background: 'linear-gradient(160deg, #fff9f0 0%, #fff3e0 100%)' }}>
 
       <Celebration show={celebrate} />
+
+      {/* cycle complete banner */}
+      {cycleMsg && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-purple-500 text-white text-xl font-bold px-6 py-3 rounded-2xl shadow-2xl animate-bounce"
+             style={{ direction: 'rtl' }}>
+          🎉 כל הכבוד! סיימת את כל 22 האותיות!
+        </div>
+      )}
 
       {/* header */}
       <div className="w-full flex items-center justify-between px-4 py-4">
