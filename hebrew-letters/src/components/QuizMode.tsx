@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { LETTERS, type HebrewLetter } from '../data/letters';
-import { speak } from '../utils/speech';
+import { speak, speakLetterAndWord } from '../utils/speech';
 import Celebration from './Celebration';
 
 interface Props {
@@ -38,7 +38,10 @@ export default function QuizMode({ onBack }: Props) {
   }, []);
 
   const sayQuestion = useCallback((letter: typeof round.target) => {
-    speak({ hebrew: letter.name, english: letter.ttsEnglish });
+    speakLetterAndWord(
+      { hebrew: letter.name, english: letter.ttsEnglish },
+      letter.wordMeaning,
+    );
   }, []);
 
   useEffect(() => {
