@@ -87,16 +87,26 @@ export default function QuizMode({ onBack }: Props) {
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 w-full max-w-sm gap-6">
 
-        {/* question card */}
+        {/* question card — show word+emoji only, hide letter name until after guess */}
         <div className="w-full rounded-3xl bg-white shadow-2xl p-8 text-center" style={{ direction: 'rtl' }}>
-          <p className="text-gray-500 text-lg mb-3 font-medium">מה האות?</p>
-          <div className="text-7xl mb-4">{round.target.emoji}</div>
-          <div className="text-3xl font-bold text-gray-800 mb-1">{round.target.name}</div>
-          <div className="text-gray-400 text-lg">({round.target.transliteration})</div>
+          <p className="text-gray-500 text-lg mb-3 font-medium">מה האות של...</p>
+          <div className="text-7xl mb-3">{round.target.emoji}</div>
+          <div className="text-4xl font-black text-gray-800 mb-4">{round.target.wordMeaning}</div>
+
+          {/* reveal letter name only after a correct guess */}
+          {correct && (
+            <div className="mb-3 py-2 px-4 rounded-2xl inline-block"
+                 style={{ background: round.target.color + '22' }}>
+              <span className="font-bold text-xl" style={{ color: round.target.color }}>
+                {round.target.name}
+              </span>
+              <span className="text-gray-400 text-base mr-2">({round.target.transliteration})</span>
+            </div>
+          )}
 
           <button
             onClick={() => sayQuestion(round.target)}
-            className="mt-4 px-6 py-2 rounded-full text-white font-bold text-base transition-transform active:scale-90"
+            className="block w-full mt-2 px-6 py-2 rounded-full text-white font-bold text-base transition-transform active:scale-90"
             style={{ background: round.target.color }}
           >
             🔊 שמע שוב
@@ -111,9 +121,11 @@ export default function QuizMode({ onBack }: Props) {
 
             let bg = '#ffffff';
             let border = '3px solid #e9ecef';
-            if (isSelected && correct)  { bg = '#00B894'; border = '3px solid #00B894'; }
+            // Only reveal correct/wrong after a correct final answer
+            if (isSelected && correct)  { bg = '#00B894'; border = `3px solid #00B894`; }
             if (isSelected && !correct) { bg = '#FF6B6B'; border = '3px solid #FF6B6B'; }
-            if (selected && isCorrect && !isSelected) { bg = '#d1fae5'; border = '3px solid #00B894'; }
+            // Don't highlight the correct answer while the user is still guessing
+            if (correct && isCorrect && !isSelected) { bg = '#d1fae5'; border = '3px solid #00B894'; }
 
             return (
               <button
