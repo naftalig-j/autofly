@@ -44,16 +44,27 @@ export default function WelcomeScreen({ onStart }: Props) {
       ))}
 
       {/* main card */}
-      <div className="relative z-10 text-center px-6 max-w-sm w-full">
-        <div className="text-8xl mb-4 animate-bounce">⭐</div>
-        <h1 className="text-white font-extrabold mb-2" style={{ fontSize: '2.8rem', direction: 'rtl' }}>
+      <div className="relative z-10 text-center px-6 max-w-sm w-full flex flex-col items-center">
+
+        {/* Lya's photo */}
+        <div className="relative mb-2">
+          <div className="w-44 h-44 rounded-full overflow-hidden border-4 border-white shadow-2xl"
+               style={{ boxShadow: '0 0 0 6px rgba(255,255,255,0.3), 0 8px 32px rgba(0,0,0,0.4)' }}>
+            <img src="/autofly/hebrew-letters/lya.png" alt="ליה"
+                 className="w-full h-full object-cover object-top" />
+          </div>
+          {/* little star badge */}
+          <div className="absolute -bottom-1 -right-1 text-4xl animate-bounce">⭐</div>
+        </div>
+
+        <h1 className="text-white font-extrabold mb-1 mt-3" style={{ fontSize: '2.8rem', direction: 'rtl' }}>
           שלום ליה!
         </h1>
-        <p className="text-white/80 text-xl mb-10 font-medium" style={{ direction: 'rtl' }}>
+        <p className="text-white/80 text-xl mb-8 font-medium" style={{ direction: 'rtl' }}>
           בואי ללמוד את האלפבית העברי 🎉
         </p>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 w-full">
           <button
             onClick={() => onStart('learn')}
             className="group relative overflow-hidden rounded-3xl py-5 px-8 text-2xl font-bold text-white shadow-2xl transition-transform active:scale-95 hover:scale-105"
@@ -71,7 +82,7 @@ export default function WelcomeScreen({ onStart }: Props) {
           </button>
         </div>
 
-        <p className="text-white/50 text-sm mt-8">22 אותיות • צלילים • כיף!</p>
+        <p className="text-white/50 text-sm mt-6">22 אותיות • צלילים • כיף!</p>
       </div>
     </div>
   );
