@@ -19,26 +19,41 @@ export interface SpeakOptions {
   english: string;
 }
 
+function makeUtterance(text: string, voice: SpeechSynthesisVoice | null, isHebrew: boolean): SpeechSynthesisUtterance {
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate  = 0.75;
+  u.pitch = 1.1;
+  if (isHebrew && voice) {
+    u.voice = voice;
+    u.lang  = voice.lang;
+  } else {
+    u.lang = 'en-US';
+  }
+  return u;
+}
+
 export function speak(opts: SpeakOptions | string) {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
 
   const { voice, isHebrew } = getBestVoice();
+  const text = typeof opts === 'string' ? opts : (isHebrew ? opts.hebrew : opts.english);
+  window.speechSynthesis.speak(makeUtterance(text, voice, isHebrew));
+}
 
-  const u = new SpeechSynthesisUtterance();
-  u.rate  = 0.75;
-  u.pitch = 1.1;
+/** Say the letter name, pause, then say the example word */
+export function speakLetterAndWord(nameOpts: SpeakOptions, wordHebrew: string) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
 
-  if (isHebrew && voice) {
-    u.voice = voice;
-    u.lang  = voice.lang;
-    u.text  = typeof opts === 'string' ? opts : opts.hebrew;
-  } else {
-    u.lang = 'en-US';
-    u.text = typeof opts === 'string' ? opts : opts.english;
-  }
+  const { voice, isHebrew } = getBestVoice();
 
-  window.speechSynthesis.speak(u);
+  const nameText = isHebrew ? nameOpts.hebrew : nameOpts.english;
+  const wordText = isHebrew ? wordHebrew     : wordHebrew; // word is always Hebrew; Carmit handles it fine
+
+  window.speechSynthesis.speak(makeUtterance(nameText, voice, isHebrew));
+  // Queue the word — browsers play utterances in order
+  window.speechSynthesis.speak(makeUtterance(wordText, voice, isHebrew));
 }
 
 export function ensureVoicesLoaded(): Promise<void> {
