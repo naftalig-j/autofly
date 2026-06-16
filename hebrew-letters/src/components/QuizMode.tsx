@@ -87,26 +87,30 @@ export default function QuizMode({ onBack }: Props) {
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 w-full max-w-sm gap-6">
 
-        {/* question card — show word+emoji only, hide letter name until after guess */}
+        {/* question card — hide everything until after correct guess */}
         <div className="w-full rounded-3xl bg-white shadow-2xl p-8 text-center" style={{ direction: 'rtl' }}>
-          <p className="text-gray-500 text-lg mb-3 font-medium">מה האות של...</p>
-          <div className="text-7xl mb-3">{round.target.emoji}</div>
-          <div className="text-4xl font-black text-gray-800 mb-4">{round.target.wordMeaning}</div>
+          <p className="text-gray-500 text-lg mb-4 font-medium">מה האות?</p>
 
-          {/* reveal letter name only after a correct guess */}
-          {correct && (
-            <div className="mb-3 py-2 px-4 rounded-2xl inline-block"
-                 style={{ background: round.target.color + '22' }}>
-              <span className="font-bold text-xl" style={{ color: round.target.color }}>
-                {round.target.name}
-              </span>
-              <span className="text-gray-400 text-base mr-2">({round.target.transliteration})</span>
+          {/* reveal emoji + word + letter name only after correct guess */}
+          {correct ? (
+            <div className="mb-4 flex flex-col items-center gap-2">
+              <div className="text-7xl">{round.target.emoji}</div>
+              <div className="text-4xl font-black text-gray-800">{round.target.wordMeaning}</div>
+              <div className="py-2 px-4 rounded-2xl inline-block"
+                   style={{ background: round.target.color + '22' }}>
+                <span className="font-bold text-xl" style={{ color: round.target.color }}>
+                  {round.target.name}
+                </span>
+                <span className="text-gray-400 text-base mr-2">({round.target.transliteration})</span>
+              </div>
             </div>
+          ) : (
+            <div className="text-6xl mb-4">🎵</div>
           )}
 
           <button
             onClick={() => sayQuestion(round.target)}
-            className="block w-full mt-2 px-6 py-2 rounded-full text-white font-bold text-base transition-transform active:scale-90"
+            className="block w-full px-6 py-2 rounded-full text-white font-bold text-base transition-transform active:scale-90"
             style={{ background: round.target.color }}
           >
             🔊 שמע שוב
