@@ -20,9 +20,6 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    defaults:
-      run:
-        working-directory: sound-transfer
 
     steps:
       - uses: actions/checkout@v4
@@ -35,16 +32,36 @@ jobs:
       - name: Setup JFrog Fly
         uses: jfrog/fly-action@v1
 
-      - name: Install dependencies
+      # ── sound-transfer ────────────────────────────────────────────────
+      - name: Install sound-transfer dependencies
         run: npm ci
+        working-directory: sound-transfer
 
-      - name: Build
+      - name: Build sound-transfer
         run: npm run build
+        working-directory: sound-transfer
+
+      # ── hebrew-letters ────────────────────────────────────────────────
+      - name: Install hebrew-letters dependencies
+        run: npm ci
+        working-directory: hebrew-letters
+
+      - name: Build hebrew-letters
+        run: npm run build
+        working-directory: hebrew-letters
+
+      # ── combine into one artifact ─────────────────────────────────────
+      - name: Combine dist folders
+        run: |
+          mkdir -p combined
+          cp -r sound-transfer/dist/. combined/
+          mkdir -p combined/hebrew-letters
+          cp -r hebrew-letters/dist/. combined/hebrew-letters/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: sound-transfer/dist
+          path: combined
 
       - name: Deploy to GitHub Pages
         id: deployment
