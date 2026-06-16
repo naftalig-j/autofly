@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LETTERS } from '../data/letters';
-import { speakPair } from '../utils/speech';
+import { speak } from '../utils/speech';
 
 interface Props {
   onBack: () => void;
@@ -15,12 +15,9 @@ export default function LearnMode({ onBack }: Props) {
 
   const sayLetter = () => {
     setSpeaking(true);
-    // Say the letter name, then the example word
-    speakPair(
-      { hebrew: current.ttsName,    english: current.ttsEnglish },
-      { hebrew: current.wordMeaning, english: current.wordMeaning },
-    );
-    setTimeout(() => setSpeaking(false), 2500);
+    // Use nikud name — Hebrew voices like Carmit pronounce it correctly
+    speak({ hebrew: current.name, english: current.ttsEnglish });
+    setTimeout(() => setSpeaking(false), 1500);
   };
 
   const next = () => { setFlipped(false); setIdx(i => (i + 1) % LETTERS.length); };
