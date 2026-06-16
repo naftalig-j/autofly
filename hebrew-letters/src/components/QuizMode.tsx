@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { LETTERS, type HebrewLetter } from '../data/letters';
-import { speak } from '../utils/speech';
+import { speak, speakPair } from '../utils/speech';
 import Celebration from './Celebration';
 
 interface Props {
@@ -37,9 +37,16 @@ export default function QuizMode({ onBack }: Props) {
     setRound(buildRound(newIdx));
   }, []);
 
+  const sayQuestion = useCallback((letter: typeof round.target) => {
+    speakPair(
+      { hebrew: letter.ttsName,    english: letter.ttsEnglish },
+      { hebrew: letter.wordMeaning, english: letter.wordMeaning },
+    );
+  }, []);
+
   useEffect(() => {
-    speak(round.target.name);
-  }, [round]);
+    sayQuestion(round.target);
+  }, [round, sayQuestion]);
 
   const pick = (choice: HebrewLetter) => {
     if (selected) return;
@@ -49,11 +56,11 @@ export default function QuizMode({ onBack }: Props) {
     if (choice.letter === round.target.letter) {
       setScore(s => s + 1);
       setCelebrate(true);
-      speak('כל הכבוד! ' + round.target.name);
+      speak({ hebrew: 'כל הכבוד!', english: 'Great job!' });
       setTimeout(() => { setCelebrate(false); nextRound(); }, 1800);
     } else {
       setShake(choice.letter);
-      speak('נסי שוב');
+      speak({ hebrew: 'נסי שוב', english: 'Try again' });
       setTimeout(() => { setShake(null); setSelected(null); }, 800);
     }
   };
@@ -88,7 +95,7 @@ export default function QuizMode({ onBack }: Props) {
           <div className="text-gray-400 text-lg">({round.target.transliteration})</div>
 
           <button
-            onClick={() => speak(round.target.name)}
+            onClick={() => sayQuestion(round.target)}
             className="mt-4 px-6 py-2 rounded-full text-white font-bold text-base transition-transform active:scale-90"
             style={{ background: round.target.color }}
           >
